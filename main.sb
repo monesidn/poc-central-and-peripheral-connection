@@ -1,0 +1,92 @@
+#include "./util.sb"
+dim testKey
+testKey = NvCfgKeyGet(213, testKey)
+if testKey != 1 then
+    rc = NvCfgKeySet(211, 247)
+    assertZero(rc, "MA001")
+    rc = NvCfgKeySet(212, 244)
+    assertZero(rc, "MA002")
+    rc = NvCfgKeySet(216, 251)
+    assertZero(rc, "MA003")
+    rc = NvCfgKeySet(213, 1) 
+    assertZero(rc, "MA004")
+endif 
+
+#include "./gatt.sb"
+#include "./device-info.sb"
+
+#include "./gatt-setup.sb"
+#include "./advert.sb"
+#include "./sensor.sb"
+
+
+dim notifySubscribed
+notifySubscribed = false
+
+dim counter 
+counter = 0
+
+sub InitGapService()
+    dim name$
+    name$ = DEVICE_NAME
+    rc = BleGapSvcInit(name$, DEVICE_NAME_WRITABLE, APPEARANCE, MIN_CONN_INTERVAL, MAX_CONN_INTERVAL, CONN_SUP_TIMEOUT, SLAVE_LATENCY)
+    assertZero(rc, "MA010")
+endsub
+
+function onCCCDWrite(byval handle, byval value)
+    if handle == handNotChar then
+        Print "Notify subscription has changed. New value: ";value;"\n"
+        notifySubscribed = value
+    endif
+endfunc 1
+
+function handlerTimer0()
+    if notifySubscribed then
+        counter = counter + 1
+        Print "Going to notify value ";counter;"\n"
+        dim data$ 
+        rc = BleEncode32(data$, counter, 0)
+        assertZero(rc, "MA020")
+
+        rc = BleCharValueNotify(handNotChar, data$)
+        if rc == 0 then
+            Print "Notification succeeded";"\n"
+        else 
+            Print "Notification failed with error ";INTEGER.H'rc;"\n"
+        endif 
+    endif
+endfunc 1
+
+function handlerTimer1()
+    Print "Will now connect to sensor.";"\n"
+    connectToSensor()
+endfunc 1
+
+function onBleMsg(byval msgId, byval ctx) 
+    select msgId
+        case BLE_EVBLEMSGID_CONNECT
+            if connectingHr then
+                onConnect(ctx)
+            else 
+                Print "Connected to a central device. In 5 seconds I'll try to connect to sensor.";"\n"
+                TimerStart(1,5000,0)
+            endif
+
+        case BLE_EVBLEMSGID_DISCONNECT
+            Print "Disconnection occurred. Stopping\n"
+            STOP
+
+        case else
+    endselect
+endfunc 1
+
+InitGatt()
+InitGapService()
+AdvertStart()
+TimerStart(0,1000,1)
+
+onevent EVTMR0 call handlerTimer0
+onevent EVTMR1 call handlerTimer1
+onevent EVBLEMSG call onBleMsg
+onevent EVCHARCCCD call onCCCDWrite
+waitevent

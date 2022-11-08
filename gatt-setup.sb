@@ -1,0 +1,67 @@
+
+#define TEST_SERVICE_UUID "6b36cc9620e24c73b47c63cbd09b598d"
+
+// Characteristics metadata
+#define TEST_CHAR_DESC "Read HR value"
+#define TEST_CHAR_LEN 4
+
+dim handNotService
+dim handNotChar
+
+// Base service UUID
+dim serviceUuid 
+serviceUuid = uuidFromConstStr(TEST_SERVICE_UUID)
+
+sub createChar()
+    dim uuidHandler, charProps
+    uuidHandler = BleHandleUUIDSibling(serviceUuid, 1)
+    charProps = BLE_CHAR_PROPERTIES_NOTIFY
+    
+    dim mdAttr 
+    mdAttr = BleAttrMetadataEx(BLE_ATTR_ACCESS_NONE, BLE_ATTR_ACCESS_NONE, TEST_CHAR_LEN, 0, rc)
+    assertZero(rc, "GA010")
+
+    dim mdCccd
+    mdCccd = BleAttrMetadataEx(BLE_ATTR_ACCESS_OPEN, BLE_ATTR_ACCESS_OPEN, 1, 0, rc)
+    
+    dim mdSccd 
+    mdSccd = BLE_CHAR_METADATA_ATTR_NOT_PRESENT
+
+    rc = BleCharNew(charProps, uuidHandler, mdAttr, mdCccd, mdSccd)
+    assertZero(rc, "GA020")
+
+    dim mdUsrDsc 
+    dim userDesc$ 
+    userDesc$ = TEST_CHAR_DESC
+    mdUsrDsc = BleAttrMetaData(BLE_ATTR_ACCESS_OPEN, BLE_ATTR_ACCESS_NONE, strlen(userDesc$), 0, rc)
+    assertZero(rc, "GA030")
+
+    // Adds the user description
+    rc = BleCharDescUserDesc(userDesc$, mdUsrDsc)
+    assertZero(rc, "GA040")
+
+    // Commit the characteristic
+    dim initialValue$
+    initialValue$ = ""
+    rc = BleCharCommit(handNotService, initialValue$, handNotChar) 
+    assertZero(rc, "GA050")
+
+    Print "Successfully created char with handle ";handNotChar;"\n"
+endsub
+
+sub InitGatt()
+    // We allocate the GATT client we'll need later
+    rc = BleGATTcOpen(0,0)
+    assertZero(rc, "GA060")
+
+    // We create the service that will send out notifications
+    rc = BleServiceNew(BLE_SERVICE_PRIMARY, serviceUuid, handNotService)
+    assertZero(rc, "GA070")
+
+    Print "Successfully created service with handle ";handNotService;"\n"
+    createChar()
+    rc = BleServiceCommit(handNotService)
+    assertZero(rc, "GA080")
+    Print "Successfully completed service with handle ";handNotService;"\n"
+endsub
+

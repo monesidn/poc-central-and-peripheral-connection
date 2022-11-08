@@ -1,0 +1,4 @@
+
+#define DEVICE_NAME           "BLE652-POC"
+#define DEVICE_NAME_WRITABLE  0
+#define APPEARANCE            BLE_APPEARANCE_GENERIC_TAG

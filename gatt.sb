@@ -1,0 +1,113 @@
+// This files contains GATT related constants
+
+// Appereance constants
+#define BLE_APPEARANCE_UNKNOWN                      0
+#define BLE_APPEARANCE_GENERIC_PHONE                64
+#define BLE_APPEARANCE_GENERIC_COMPUTER             128
+#define BLE_APPEARANCE_GENERIC_WATCH                192
+#define BLE_APPEARANCE_WATCH_SPORTS_WATCH           193
+#define BLE_APPEARANCE_GENERIC_DISPLAY              320
+#define BLE_APPEARANCE_GENERIC_EYE_GLASSES          448
+#define BLE_APPEARANCE_GENERIC_TAG                  512
+#define BLE_APPEARANCE_GENERIC_KEYRING              576
+#define BLE_APPEARANCE_GENERIC_MEDIA_PLAYER         640
+#define BLE_APPEARANCE_GENERIC_BLOOD_PRESSURE       896
+#define BLE_APPEARANCE_BLOOD_PRESSURE_ARM           897
+#define BLE_APPEARANCE_BLOOD_PRESSURE_WRIST         898
+
+#define BLE_APPEARANCE_GENERIC_CYCLING              1152
+
+
+//Minimum acceptable connection interval (0.5 seconds)
+#define MIN_CONN_INTERVAL                           50000
+//Maximum acceptable connection interval (1 second).
+#define MAX_CONN_INTERVAL                           100000
+//Slave latency -- number of conn events that can be missed
+//Effective Conn interval will be (SLAVE_LATENCY+1)*ACTUAL_CONN_INTERVAL
+#define SLAVE_LATENCY                               1
+//Connection supervisory timeout (4 seconds) - max 32 seconds
+#define CONN_SUP_TIMEOUT                            4000000
+
+
+#define BLE_SERVICE_SECONDARY                       0
+#define BLE_SERVICE_PRIMARY                         1
+
+// BLE defined services short ids
+#define BLE_SERVICE_HEART_RATE                      0x180D
+#define BLE_SERVICE_CYCLING_POWER                   0x1818
+#define BLE_SERVICE_CYCLING_SPEED_AND_CADENCE       0x1816
+
+// BLE defined characteristics short ids
+#define BLE_CHARACTERISTIC_HEART_RATE_MEASUREMENT   0x2A37
+
+// BLE advertising data tags
+#define BLE_AD_TAG_COMPLETE_LOCAL_NAME  0x09
+#define BLE_AD_TAG_COMPLETE_LIST_OF_UUID_16  0x03
+
+// Other useful BLE UUIDs
+#define BLE_CCCD_UUID                               0x2902
+#define BLE_SCCD_UUID                               0x2903
+
+#define BLE_CHAR_METADATA_ATTR_NOT_PRESENT          0
+
+#define BLE_ATTR_ACCESS_NONE                        0
+#define BLE_ATTR_ACCESS_OPEN                        1
+#define BLE_ATTR_ACCESS_ENC_NO_MITM                 2
+#define BLE_ATTR_ACCESS_ENC_WITH_MITM               3
+#define BLE_ATTR_ACCESS_SIGNED_NO_MITM              4
+#define BLE_ATTR_ACCESS_SIGNED_WITH_MITM            5
+
+#define BLE_CHAR_PROPERTIES_BROADCAST               0x01
+#define BLE_CHAR_PROPERTIES_READ                    0x02
+#define BLE_CHAR_PROPERTIES_WRITE_WO_RESPONSE       0x04
+#define BLE_CHAR_PROPERTIES_WRITE                   0x08
+#define BLE_CHAR_PROPERTIES_NOTIFY                  0x10
+#define BLE_CHAR_PROPERTIES_INDICATE                0x20
+#define BLE_CHAR_PROPERTIES_AUTH_SIGNED_WR          0x40
+#define BLE_CHAR_PROPERTIES_RELIABLE_WRITE          0x80
+
+//Types of advert packets
+#define ADV_IND                                     0
+#define ADV_DIRECT_IND                              1
+#define ADV_SCAN_IND                                2
+#define ADV_NONCONN_IND                             3
+
+//Types of filter policy
+#define ADV_FILTERPOLICY_ANY                        0
+#define ADV_FILTERPOLICY_SCANREQ                    1
+#define ADV_FILTERPOLICY_CONNREQ                    2
+#define ADV_FILTERPOLICY_BOTH                       3
+
+//BLE EVENT MSG IDs
+#define BLE_EVBLEMSGID_CONNECT                      0   //msgCtx = connection handle
+#define BLE_EVBLEMSGID_DISCONNECT                   1   //msgCtx = connection handle
+#define BLE_EVBLEMSGID_SERVICE_ERROR                4   //msgCtx = resultcode
+#define BLE_EVBLEMSGID_NEW_BOND                     10  //msgCtx = connection handle
+#define BLE_EVBLEMSGID_CONN_PARMS_UPDATE            14  //msgCtx = connection handle
+#define BLE_EVBLEMSGID_CONN_PARMS_UPDATE_FAIL       15  //msgCtx = connection handle
+#define BLE_EVBLEMSGID_CONN_TO_BONDED_MASTER        16  //msgCtx = connection handle
+#define BLE_EVBLEMSGID_UPDATED_BOND                 17  //msgCtx = connection handle
+#define BLE_EVBLEMSGID_ENCRYPTED                    18  //msgCtx = connection handle
+#define BLE_EVBLEMSGID_POWER_FAILURE_WARNING        19  //msgCtx = current supply voltage
+#define BLE_EVBLEMSGID_UNENCRYPTED                  20  //msgCtx = connection handle
+#define BLE_EVBLEMSGID_DEVICENAME_WRITE             21  //msgCtx = connection handle
+
+//Pairing i/o capability
+#define BLE_IOCAPABILITY_NONE                       0
+#define BLE_IOCAPABILITY_DISPLAY_YESNO              1
+#define BLE_IOCAPABILITY_KEYBOARD_ONLY              2
+#define BLE_IOCAPABILITY_DISPLAY_ONLY               3
+#define BLE_IOCAPABILITY_KEYBOARD_DISPLAY           4
+#define BLE_IOCAPABILITY_ILLEGAL                    5
+
+//HCI Status Codes
+#define BLE_HCI_AUTHENTICATION_FAILURE              0x05
+#define BLE_HCI_CONNECTION_TIMEOUT                  0x08
+
+//Some Useful Result Codes to help with documentation
+#define RESCODE_BLE_SVC_REGISTERED                  0x6018
+
+#define BLE_DISCOVERABILITY_NONE                    0
+#define BLE_DISCOVERABILITY_LIMITED                 1
+#define BLE_DISCOVERABILITY_GENERAL                 2
+#define BLE_DISCOVERABILITY_BOTH                    3

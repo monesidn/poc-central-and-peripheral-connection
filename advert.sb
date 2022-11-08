@@ -1,0 +1,67 @@
+
+// Contains the most recent Advertise report
+dim lastAdvReport$    
+
+// Contains the most recent scan report
+dim lastScanReport$   
+
+// The current Advertise interval (ms).
+dim advIntervalMs
+advIntervalMs = 100
+
+// The current timeout of advertise (ms). If set to 0 then we advert forever
+dim advTimeoutMs 
+advTimeoutMs = 350000
+
+// Should the appearance be included? Usually Yes
+dim advAppearance 
+advAppearance = true
+
+// Flags passed as second argument of BleAdvRptInit
+dim advFlags 
+advFlags = BLE_DISCOVERABILITY_GENERAL 
+
+
+sub updateAdvert()
+    dim deviceName$
+    deviceName$ = DEVICE_NAME
+
+    // Create a minimal advertise report
+    rc = BleAdvRptInit(lastAdvReport$, advFlags, advAppearance, strlen(deviceName$)) 
+    assertZero(rc, "AD010")
+
+    //Initialise an empty scan report
+    rc = BleScanRptInit(lastScanReport$)
+    assertZero(rc, "AD020")
+
+    //Commit the advert and scan report to the scan
+    rc = BleAdvRptsCommit(lastAdvReport$, lastScanReport$)
+    assertZero(rc, "AD030")
+endsub
+
+
+sub AdvertStart()
+    dim peerAddr$ 
+    peerAddr$ = ""
+
+    dim timeout 
+    timeout = advTimeoutMs
+    if timeout == 0 then
+        timeout = 10000000
+    endif
+
+    updateAdvert()
+    rc = BleAdvertStart(ADV_IND, peerAddr$, advIntervalMs, timeout, 0)
+    assertZero(rc, "AD040")
+endsub
+
+function onAdvTimeout() 
+    if advTimeoutMs == 0 then
+        AdvertStart()
+    else 
+        Print "Advertisiment stopped due timeout, exiting"
+        STOP
+    endif
+endfunc 1
+
+onevent EVBLE_ADV_TIMEOUT call onAdvTimeout

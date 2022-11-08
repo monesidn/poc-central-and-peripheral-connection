@@ -1,0 +1,24 @@
+dim rc
+
+#define true 1
+#define false 0
+
+sub assertZero(byval v, byval tag$)
+    if v != 0 then
+        PRINT "Invalid exitCode returned. Expected 0, Found ";INTEGER.H'v;" @";tag$;"\n"
+        STOP
+    endif
+endsub
+
+sub assertNotZero(byval v, byval tag$)
+    if v == 0 then
+        PRINT "Invalid exitCode returned. Expected not 0, Found ";INTEGER.H'v;" @";tag$;"\n"
+        STOP
+    endif
+endsub
+
+function uuidFromConstStr(byval input$)
+    dim str$, result
+    str$ = StrDehexize$(input$)
+    result = BleHandleUuid128(str$)
+endfunc result

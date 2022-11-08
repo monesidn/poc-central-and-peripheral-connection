@@ -1,0 +1,134 @@
+
+
+#define BLE_HEART_RATE_IS_16_BITS_MEASUREMENT_MASK 0x80
+#define TARGET_ADDRESS "01d6c4313792ec"
+
+// The processed service UUID handle
+dim hrServiceUuid 
+hrServiceUuid = BleHandleUuid16(BLE_SERVICE_HEART_RATE)
+assertNotZero(hrServiceUuid, "SE001")
+
+// The processed char UUID handle
+dim hrmCharUuid 
+hrmCharUuid = BleHandleUuid16(BLE_CHARACTERISTIC_HEART_RATE_MEASUREMENT)
+assertNotZero(hrmCharUuid, "SE002")
+
+// The processed CCCD handle
+dim cccdUuid 
+cccdUuid = BleHandleUuid16(BLE_CCCD_UUID)
+assertNotZero(cccdUuid, "SE003")
+
+dim connectingHr
+dim connHandle
+dim hrmHandle
+
+sub connectToSensor()
+    dim addr$
+    addr$ = TARGET_ADDRESS
+    addr$ = StrDeHexize$(addr$)
+    connectingHr = true
+    rc =  BleConnect(addr$, 10000, 20000, 75000, 5000000)
+    assertZero(rc, "SE010")
+endsub
+
+sub onConnect(byval handle)
+    if !connectingHr then
+        exitsub
+    endif
+
+    connHandle = handle
+    Print "Connection to sensor established. Will subscribe to notify.\n"
+    
+    // This will provide the result in a EVFINDCHAR event.
+    rc = BleGattcFindChar(connHandle, hrServiceUuid, 0, hrmCharUuid, 0)
+    assertZero(rc, "SE020")
+endsub
+
+
+function onFindChar(byval handle, byval charProps, byval charHandle, byval isUuid) 
+    if handle != connHandle then
+        // If the event refers to a different connection we ignore it.
+        exitfunc 1
+    endif
+
+    if charHandle == 0 then
+        Print "ERROR: Could not find heart rate mesurement char.\n"
+        STOP
+    endif
+
+    hrmHandle = charHandle
+
+    // This will provide the result in a EVFINDDESC event.
+    rc = BleGattcFindDesc(connHandle, hrServiceUuid, 0, hrmCharUuid, 0, cccdUuid, 0)
+    assertZero(rc, "SE030")
+endfunc 1
+
+function onFindDesc(byval conn, byval descHandle) 
+    if connHandle != conn then
+        // If the event refers to a different connection we ignore it.
+        exitfunc 1
+    endif
+
+    if descHandle == 0 then
+        Print "ERROR: Could not find CCCD heart rate mesurement char.\n"
+        STOP
+    endif
+
+    // Notification enabled payload
+    dim data$
+    data$ ="\01\00"
+
+    // This will provide the result in a EVATTRWRITE event
+    rc = BleGattcWrite(connHandle, descHandle, data$)
+    assertZero(rc, "SE040")
+endfunc 1
+
+function onAttrWrite(byval conn, byval attrHandle, byval result) as integer
+    if connHandle != conn then
+        // If the event refers to a different connection we ignore it.
+        exitfunc 1
+    endif
+
+    if result != 0 then
+        Print "ERROR: Can not write to CCCD for heart rate measurement.\n"
+        STOP
+    else 
+        connectingHr = false
+    endif 
+endfunc 1
+
+function onAttrNotify(byval conn, byval charHandle, byval notificationType, byval nLen, byval data$) 
+    if connHandle != conn then
+        // If the event refers to a different connection we ignore it.
+        exitfunc 1
+    endif
+
+    dim bpm
+    dim flags
+    rc = BleDecodeU8(data$, flags, 0)
+    assertNotZero(rc, "SE050")
+
+    if flags & BLE_HEART_RATE_IS_16_BITS_MEASUREMENT_MASK == 1 then
+        rc = BleDecodeU16(data$, bpm, 1)
+        assertNotZero(rc, "SE060")
+    else
+        rc = BleDecodeU8(data$, bpm, 1)
+        assertNotZero(rc, "SE070")
+    endif
+
+    Print "Got HR value of ";bpm;"\n"
+endfunc 1
+
+function onConnTimeout()
+    if !connectingHr then
+        exitfunc 1
+    endif
+
+    Print "Connection to sensor timeout. The sensor is not connected to Notifications should work\n"
+endfunc 1
+
+onevent EVFINDCHAR call onFindChar
+onevent EVFINDDESC call onFindDesc
+onevent EVATTRWRITE call onAttrWrite
+onevent EVBLE_CONN_TIMEOUT call onConnTimeout
+onevent EVATTRNOTIFYEX call onAttrNotify
