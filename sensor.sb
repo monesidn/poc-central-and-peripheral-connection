@@ -19,7 +19,9 @@ cccdUuid = BleHandleUuid16(BLE_CCCD_UUID)
 assertNotZero(cccdUuid, "SE003")
 
 dim connectingHr
-dim connHandle
+dim hrConnHand
+hrConnHand = -1
+
 dim hrmHandle
 
 sub connectToSensor()
@@ -31,22 +33,32 @@ sub connectToSensor()
     assertZero(rc, "SE010")
 endsub
 
+sub disconnectHr()
+    if !hrConnHand then
+        exitsub
+    endif
+
+    Print "Disconnecting conn with handle ";hrConnHand;".\n"
+    rc = BleDisconnect(hrConnHand)
+    assertZero(rc, "SE015")
+endsub
+
 sub onConnect(byval handle)
     if !connectingHr then
         exitsub
     endif
 
-    connHandle = handle
+    hrConnHand = handle
     Print "Connection to sensor established. Will subscribe to notify.\n"
+    Print "Connection handle is ";handle;".\n"
     
     // This will provide the result in a EVFINDCHAR event.
-    rc = BleGattcFindChar(connHandle, hrServiceUuid, 0, hrmCharUuid, 0)
+    rc = BleGattcFindChar(hrConnHand, hrServiceUuid, 0, hrmCharUuid, 0)
     assertZero(rc, "SE020")
 endsub
 
-
 function onFindChar(byval handle, byval charProps, byval charHandle, byval isUuid) 
-    if handle != connHandle then
+    if handle != hrConnHand then
         // If the event refers to a different connection we ignore it.
         exitfunc 1
     endif
@@ -59,12 +71,12 @@ function onFindChar(byval handle, byval charProps, byval charHandle, byval isUui
     hrmHandle = charHandle
 
     // This will provide the result in a EVFINDDESC event.
-    rc = BleGattcFindDesc(connHandle, hrServiceUuid, 0, hrmCharUuid, 0, cccdUuid, 0)
+    rc = BleGattcFindDesc(hrConnHand, hrServiceUuid, 0, hrmCharUuid, 0, cccdUuid, 0)
     assertZero(rc, "SE030")
 endfunc 1
 
 function onFindDesc(byval conn, byval descHandle) 
-    if connHandle != conn then
+    if hrConnHand != conn then
         // If the event refers to a different connection we ignore it.
         exitfunc 1
     endif
@@ -79,12 +91,12 @@ function onFindDesc(byval conn, byval descHandle)
     data$ ="\01\00"
 
     // This will provide the result in a EVATTRWRITE event
-    rc = BleGattcWrite(connHandle, descHandle, data$)
+    rc = BleGattcWrite(hrConnHand, descHandle, data$)
     assertZero(rc, "SE040")
 endfunc 1
 
 function onAttrWrite(byval conn, byval attrHandle, byval result) as integer
-    if connHandle != conn then
+    if hrConnHand != conn then
         // If the event refers to a different connection we ignore it.
         exitfunc 1
     endif
@@ -98,7 +110,7 @@ function onAttrWrite(byval conn, byval attrHandle, byval result) as integer
 endfunc 1
 
 function onAttrNotify(byval conn, byval charHandle, byval notificationType, byval nLen, byval data$) 
-    if connHandle != conn then
+    if hrConnHand != conn then
         // If the event refers to a different connection we ignore it.
         exitfunc 1
     endif
@@ -124,7 +136,8 @@ function onConnTimeout()
         exitfunc 1
     endif
 
-    Print "Connection to sensor timeout. The sensor is not connected to Notifications should work\n"
+    Print "Connection to sensor timeout. The POC won't show the defect in this state. STOPping\n"
+    STOP
 endfunc 1
 
 onevent EVFINDCHAR call onFindChar
